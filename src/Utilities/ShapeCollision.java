@@ -1,4 +1,4 @@
-package Game;
+package Utilities;
 import java.awt.Shape;
 import java.awt.geom.Area;
 

@@ -8,6 +8,8 @@ import java.awt.image.BufferStrategy;
 
 import javax.swing.*;
 
+import Utilities.ShapeCollision;
+
 import Entities.Entity;
 import Entities.Follower;
 import Entities.Player;
@@ -99,19 +101,19 @@ public class Game extends Canvas implements MouseMotionListener, MouseListener{
 		active_entityList = new ArrayList<Entity>();
 		
 		//create entities
-		Player p = new Player(this, width - 32, height - 32, 64, 64);
+		Player p = new Player(this, 32.0, 32.0, 64, 64);
 		p.setOffset(32, 32);
 		addEntity(p);
 		
-		Follower f = new Follower(this, 32.0f, 32.0f, 64, 64);
+		Follower f = new Follower(this, width - 32, height - 32, 64, 64);
 		f.setOffset(32, 32);
 		f.setTarget(p);
 		addEntity(f);
 		
-		f = new Follower(this, 128.0f, 128.0f, 64, 64);
+		/*f = new Follower(this, 128.0f, 128.0f, 64, 64);
 		f.setOffset(32, 32);
 		f.setTarget(p);
-		addEntity(f);
+		addEntity(f);*/
 	}
 	
 	public void runGame(){
@@ -142,6 +144,8 @@ public class Game extends Canvas implements MouseMotionListener, MouseListener{
 				lastLoopTime = System.currentTimeMillis();
 				numTimesDrawn = 0;
 			}
+			
+			container.setTitle(Integer.toString(fps));
 			
 		}
 		

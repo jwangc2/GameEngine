@@ -25,7 +25,7 @@ public class Player extends Entity{
 	
 	public void draw(Graphics g){
 		g.setColor(new Color(0, 128, 0, 128));
-		drawMask(g, Color.white);
+		drawMask(g, x, y, Color.white);
 	}
 	
 	public void step(){

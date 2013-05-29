@@ -8,15 +8,16 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
+import Utilities.ShapeCollision;
+
 import Game.Game;
-import Game.ShapeCollision;
 
 
 public abstract class Entity{
 	protected int bboxLeft, bboxTop, bboxRight, bboxBottom;
 	protected int xoff, yoff;
 	protected int depth;
-	protected double x, y, xscale, yscale;
+	protected double x, y, xPrevious, yPrevious, xscale, yscale;
 	protected double hspeed, vspeed, speed, direction, maskDirection;
 	protected Shape basicBbox, myBbox, basicMask, myMask;
 	protected Game game;
@@ -31,6 +32,8 @@ public abstract class Entity{
 		//transformations
 		this.x = x;
 		this.y = y;
+		xPrevious = x;
+		yPrevious = y;
 		xscale = 1.0;
 		yscale = 1.0;
 		
@@ -73,18 +76,21 @@ public abstract class Entity{
 			//run calculations
 			step();
 			
+			xPrevious = x;
+			yPrevious = y;
+			
 			//move based on speed
 			x += hspeed;
 			y += vspeed;
-			
-			//update our shapes for drawing and for the next step
-			updateBbox();
-			updateShape();
-			
+		
 			//register collisions
 			for(Entity e : getCollisions(game.getActiveEntityList())){
 				collision(e);
 			}
+			
+			//update our shapes for drawing
+			updateBbox();
+			updateShape();
 		}
 		
 		return false;
@@ -113,6 +119,17 @@ public abstract class Entity{
 		
 		AffineTransform atLine = updateShape();
 		g2.fill(myMask);
+		Shape pointer = atLine.createTransformedShape(new Line2D.Double(0, 0, getWidth(), 0));
+		g2.setColor(lineColor);
+		g2.draw(pointer);
+	}
+	
+	public void drawMask(Graphics g, double x, double y, Color lineColor){
+		Graphics2D g2 = (Graphics2D)g;
+		
+		Shape tempMask = createMaskAt(x, y);
+		AffineTransform atLine = getMaskXForm(x, y); 
+		g2.fill(tempMask);
 		Shape pointer = atLine.createTransformedShape(new Line2D.Double(0, 0, getWidth(), 0));
 		g2.setColor(lineColor);
 		g2.draw(pointer);
@@ -221,6 +238,8 @@ public abstract class Entity{
 	public Shape getMask() {return myMask;}
 	public Shape getBbox() {return myBbox;}
 	public int getDepth() {return depth;}
+	public int getXOff() {return xoff;}
+	public int getYOff() {return yoff;}
 	
 	//setters
 	public void setX(double x) {this.x = x;}
