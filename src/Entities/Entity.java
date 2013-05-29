@@ -1,4 +1,4 @@
-package Game;
+package Entities;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -8,16 +8,19 @@ import java.awt.geom.Line2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 
+import Game.Game;
+import Game.ShapeCollision;
 
-public abstract class Entity implements Comparable<Entity>{
+
+public abstract class Entity{
 	protected int bboxLeft, bboxTop, bboxRight, bboxBottom;
 	protected int xoff, yoff;
 	protected int depth;
 	protected double x, y, xscale, yscale;
-	protected double hspeed, vspeed, speed, direction;
+	protected double hspeed, vspeed, speed, direction, maskDirection;
 	protected Shape basicBbox, myBbox, basicMask, myMask;
 	protected Game game;
-	protected boolean isDestroyed;
+	protected boolean isDestroyed, staticMask;
 	
 	//constructors
 	public Entity(Game game, double x, double y, int w, int h){
@@ -36,6 +39,7 @@ public abstract class Entity implements Comparable<Entity>{
 		vspeed = 0.0;
 		speed = 0.0;
 		direction = 0.0f;
+		maskDirection = 0.0f;
 		
 		//inherent properties
 		setOffset(0, 0);
@@ -45,6 +49,8 @@ public abstract class Entity implements Comparable<Entity>{
 		
 		basicMask = new Rectangle2D.Double(0, 0, w, h);
 		myMask = null;
+		
+		staticMask = true;
 		
 		updateBbox();
 		updateShape();
@@ -74,21 +80,27 @@ public abstract class Entity implements Comparable<Entity>{
 			//update our shapes for drawing and for the next step
 			updateBbox();
 			updateShape();
+			
+			//register collisions
+			for(Entity e : getCollisions(game.getActiveEntityList())){
+				collision(e);
+			}
 		}
 		
 		return false;
 	}
 
 	//event based methods (that need to be implemented / overridden)
-	public abstract void create();
-	public abstract void destroy();
-	public abstract void step();
+	public void create(){}
+	public void destroy(){}
+	public void step(){}
 	public void draw(Graphics g){
 		g.setColor(new Color(0, 0, 128, 64));
 		drawBbox(g);
 		g.setColor(new Color(0, 0, 0, 128));
 		drawMask(g, Color.white);
 	}
+	public void collision(Entity other){}
 	
 	//helper drawing methods
 	public void drawBbox(Graphics g){
@@ -126,7 +138,7 @@ public abstract class Entity implements Comparable<Entity>{
 	protected AffineTransform getMaskXForm(double xpos, double ypos){
 		AffineTransform at = new AffineTransform();
 		at.translate(xpos, ypos);
-		at.rotate(direction);
+		at.rotate(maskDirection);
 		at.scale(xscale, yscale);
 		
 		return at;
@@ -157,11 +169,11 @@ public abstract class Entity implements Comparable<Entity>{
 	}
 	
 	//get all Entities that this Entity collides with
-	public final ArrayList<Entity> getCollisions(ArrayList<Entity> collisionGroup){
-		return getCollisions(x, y, collisionGroup);
+	public final ArrayList<Entity> getAllCollisions(ArrayList<Entity> collisionGroup){
+		return getAllCollisions(x, y, collisionGroup);
 	}
 	
-	public final ArrayList<Entity> getCollisions(double xpos, double ypos, ArrayList<Entity> collisionGroup){
+	public final ArrayList<Entity> getAllCollisions(double xpos, double ypos, ArrayList<Entity> collisionGroup){
 		ArrayList<Entity> collisions = new ArrayList<Entity>();
 		
 		for(Entity e : collisionGroup){
@@ -173,16 +185,24 @@ public abstract class Entity implements Comparable<Entity>{
 		return collisions;
 	}
 	
-	//given a list of Entities you are colliding with, return whether any should register an actual collision
-	public abstract boolean isCollidingWith(ArrayList<Entity> collList);
+	//given a specific Entity, return whether any should register an actual collision
+	public abstract boolean isCollidingWith(Entity other);
 	
 	//use these functions to check for collisions
-	public final boolean collides(ArrayList<Entity> collisionGroup){
-		return collides(x, y, collisionGroup);
+	public final ArrayList<Entity> getCollisions(ArrayList<Entity> collisionGroup){
+		return getCollisions(x, y, collisionGroup);
 	}
 	
-	public final boolean collides(double xpos, double ypos, ArrayList<Entity> collisionGroup){
-		return isCollidingWith(getCollisions(xpos, ypos, collisionGroup));
+	public final ArrayList<Entity> getCollisions(double xpos, double ypos, ArrayList<Entity> collisionGroup){
+		ArrayList<Entity> collisions = getAllCollisions(xpos, ypos, collisionGroup);
+		ArrayList<Entity> realCollisions = new ArrayList<Entity>();
+		for(Entity e : collisions){
+			if (isCollidingWith(e)){
+				realCollisions.add(e);
+			}
+		}
+		
+		return realCollisions;
 	}
 
 	//getters
@@ -200,6 +220,7 @@ public abstract class Entity implements Comparable<Entity>{
 	public int getBboxBottom() {return bboxBottom;}
 	public Shape getMask() {return myMask;}
 	public Shape getBbox() {return myBbox;}
+	public int getDepth() {return depth;}
 	
 	//setters
 	public void setX(double x) {this.x = x;}
@@ -230,6 +251,9 @@ public abstract class Entity implements Comparable<Entity>{
 	public void updateSpeed(){
 		speed = Math.sqrt(Math.pow(hspeed, 2) + Math.pow(vspeed, 2));
 		direction = Math.atan2(vspeed, hspeed);
+		if (!staticMask){
+			maskDirection = direction;
+		}
 	}
 	
 	//vectors
@@ -239,6 +263,9 @@ public abstract class Entity implements Comparable<Entity>{
 	}
 	public void setDirection(double direction){
 		this.direction = direction;
+		if (!staticMask){
+			maskDirection = direction;
+		}
 		updateComponents();
 	}
 	public void updateComponents(){
@@ -246,8 +273,17 @@ public abstract class Entity implements Comparable<Entity>{
 		vspeed = speed * Math.sin(direction);
 	}
 	
-	//implementations
-	public int compareTo(Entity other){
-		return (other.depth - depth);
+	//mask
+	public void setStaticMask(boolean b){
+		staticMask = b;
 	}
+	
+	public void setMaskDirection(double direction){
+		if (staticMask){
+			this.maskDirection = direction;
+		}
+	}
+	
+	public boolean getStaticMask(){return staticMask;}
+	public double getMaskDirection(){return maskDirection;}
 }

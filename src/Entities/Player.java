@@ -1,7 +1,9 @@
-package Game;
+package Entities;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.util.ArrayList;
+
+import Game.Game;
 
 
 public class Player extends Entity{
@@ -16,12 +18,10 @@ public class Player extends Entity{
 		super(game, w, h);
 	}
 	
-	//basics event abstracts
+	//basics event methods
 	public void create(){
 		deathTimer = 100;
 	}
-	
-	public void destroy(){}
 	
 	public void draw(Graphics g){
 		g.setColor(new Color(0, 128, 0, 128));
@@ -36,7 +36,7 @@ public class Player extends Entity{
 	}
 	
 	//collision abstracts
-	public boolean isCollidingWith(ArrayList<Entity> collList){
-		return (collList.size() > 0);
+	public boolean isCollidingWith(Entity other) {
+		return (other != null);
 	}
 }

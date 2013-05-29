@@ -1,5 +1,7 @@
-package Game;
+package Entities;
 import java.util.ArrayList;
+
+import Game.Game;
 
 
 public class Follower extends Entity{
@@ -14,12 +16,9 @@ public class Follower extends Entity{
 		super(game, w, h);
 	}
 	
-	//basic event abstracts
+	//basic event methods
 	public void create(){
 		target = null;
-	}
-	
-	public void destroy(){
 	}
 	
 	public void step(){
@@ -28,26 +27,21 @@ public class Follower extends Entity{
 		double nx = x + Math.cos(aimAngle) * aimSpeed;
 		double ny = y + Math.sin(aimAngle) * aimSpeed;
 		
-		if (collides(nx, ny, game.getActiveEntityList())){
+		if (getCollisions(nx, ny, game.getActiveEntityList()).size() > 0){
 			aimSpeed = 0;
 			aimAngle = direction;
 		}
 		
 		setSpeed(aimSpeed);
 		setDirection(aimAngle);
+		
+		setStaticMask(!game.getMousePressed());
 	}
 	
 	//basic collision abstracts
-	public boolean isCollidingWith(ArrayList<Entity> collList){
-		
+	public boolean isCollidingWith(Entity other){	
 		//collide only with Player objects
-		for(Entity e: collList){
-			if (e instanceof Player){
-				return true;
-			}
-		}
-		
-		return false;
+		return (other instanceof Player);
 	}
 	
 	//setters

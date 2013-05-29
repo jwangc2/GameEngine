@@ -1,17 +1,23 @@
 package Game;
 import java.awt.*;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferStrategy;
 
 import javax.swing.*;
 
+import Entities.Entity;
+import Entities.Follower;
+import Entities.Player;
+
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 
-public class Game extends Canvas implements MouseMotionListener{
+public class Game extends Canvas implements MouseMotionListener, MouseListener{
 	
 	private JFrame container;
 	private boolean gameIsRunning;
@@ -23,8 +29,10 @@ public class Game extends Canvas implements MouseMotionListener{
 	public final int height = 480;
 	
 	private ArrayList<Entity> entityList, del_entityList, add_entityList, active_entityList;
+	private DepthComparator depthComparator;
 	
 	private float mousex, mousey;
+	private boolean mousePressed;
 	private double collBuff, collAreaX, collAreaY, collAreaWidth, collAreaHeight;
 	
 	//fps
@@ -43,6 +51,7 @@ public class Game extends Canvas implements MouseMotionListener{
 		gamePanel.setPreferredSize(new Dimension(width, height));
 		
 		addMouseMotionListener(this);
+		addMouseListener(this);
 		gamePanel.add(this);
 		
 		//we want accelerated graphics, so we will paint on our own
@@ -71,6 +80,10 @@ public class Game extends Canvas implements MouseMotionListener{
 		lastLoopTime = 0;
 		mousex = 0;
 		mousey = 0;
+		mousePressed = false;
+		
+		//sorters
+		depthComparator = new DepthComparator();
 	}
 	
 	//game methods
@@ -142,7 +155,7 @@ public class Game extends Canvas implements MouseMotionListener{
 		
 	private void run(){
 		//destroy entities (by depth)
-		Collections.sort(del_entityList);
+		Collections.sort(del_entityList, depthComparator);
 		for(Entity e : del_entityList){
 			e.destroy();
 			int pos = entityList.indexOf(e);
@@ -150,7 +163,7 @@ public class Game extends Canvas implements MouseMotionListener{
 		}
 		del_entityList.clear();
 		
-		//add entities (first in first out)
+		//add entities via queue (first in first out)
 		for(Entity e : add_entityList){
 			entityList.add(e);
 		}
@@ -169,7 +182,7 @@ public class Game extends Canvas implements MouseMotionListener{
 		}
 		
 		//make each entity move (by depth)
-		Collections.sort(active_entityList);
+		Collections.sort(active_entityList, depthComparator);
 		for(Entity e : active_entityList){
 			e.run();
 		}
@@ -189,7 +202,7 @@ public class Game extends Canvas implements MouseMotionListener{
 		g2.fill(collisionArea);
 		
 		//actual drawing
-		Collections.sort(entityList);
+		Collections.sort(entityList, depthComparator);
 		for(Entity e : entityList){
 			e.draw(g);
 		}
@@ -219,11 +232,43 @@ public class Game extends Canvas implements MouseMotionListener{
     }
 
     public void mouseDragged(MouseEvent e) {
+    	mousex = e.getX();
+		mousey = e.getY();
     }
+    
+    @Override
+	public void mouseClicked(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void mouseEntered(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseExited(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mousePressed(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+		mousePressed = true;
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent arg0) {
+		// TODO Auto-generated method stub
+		mousePressed = false;
+	}
     
     //getters and setters
     public float getMouseX(){return mousex;}
     public float getMouseY(){return mousey;}
+    public boolean getMousePressed(){return mousePressed;}
     public int getFps(){return fps;}
 
 	//our runner
@@ -233,4 +278,13 @@ public class Game extends Canvas implements MouseMotionListener{
 		g.runGame();
 	}
 
+}
+
+class DepthComparator implements Comparator<Entity>{
+
+	@Override
+	public int compare(Entity e0, Entity e1) {
+		return (e0.getDepth() - e1.getDepth());
+	}
+	
 }
